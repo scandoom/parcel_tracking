@@ -11,12 +11,8 @@ import (
 )
 
 var (
-	// randSource источник псевдо случайных чисел.
-	// Для повышения уникальности в качестве seed
-	// используется текущее время в unix формате (в виде числа)
 	randSource = rand.NewSource(time.Now().UnixNano())
-	// randRange использует randSource для генерации случайных чисел
-	randRange = rand.New(randSource)
+	randRange  = rand.New(randSource)
 )
 
 // getTestParcel возвращает тестовую посылку
@@ -31,37 +27,26 @@ func getTestParcel() Parcel {
 
 // TestAddGetDelete проверяет добавление, получение и удаление посылки
 func TestAddGetDelete(t *testing.T) {
-	// prepare
-	db, err := sql.Open("sqlite", "tracker.db") // настройте подключение к БД
-	if err != nil {
-		require.NoError(t, err)
-	}
+	db, err := sql.Open("sqlite", "tracker.db")
+	require.NoError(t, err)
 	defer db.Close()
 
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
 
 	id, err := store.Add(parcel)
-
 	require.NoError(t, err)
 	require.NotNil(t, id)
 
 	parcels, err := store.Get(id)
-
 	require.NoError(t, err)
-	assert.Equal(t, parcel.Client, parcels.Client)
-	assert.Equal(t, parcel.Status, parcels.Status)
-	assert.Equal(t, parcel.Address, parcels.Address)
-	assert.Equal(t, parcel.CreatedAt, parcels.CreatedAt)
+	assert.Equal(t, parcel, parcels)
 
 	err = store.Delete(id)
-	if err != nil {
-		require.NoError(t, err)
-	}
+	require.NoError(t, err)
 
 	_, err = store.Get(id)
-
-	require.Equal(t, sql.ErrNoRows, err)
+	require.ErrorIs(t, err, sql.ErrNoRows)
 	// добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
 
 	// get
@@ -75,11 +60,8 @@ func TestAddGetDelete(t *testing.T) {
 
 // TestSetAddress проверяет обновление адреса
 func TestSetAddress(t *testing.T) {
-	// prepare
 	db, err := sql.Open("sqlite", "tracker.db")
-	if err != nil {
-		require.NoError(t, err)
-	} // настройте подключение к БД
+	require.NoError(t, err) // настройте подключение к БД
 	defer db.Close()
 
 	store := NewParcelStore(db)
@@ -107,11 +89,9 @@ func TestSetAddress(t *testing.T) {
 
 // TestSetStatus проверяет обновление статуса
 func TestSetStatus(t *testing.T) {
-	// prepare
+
 	db, err := sql.Open("sqlite", "tracker.db")
-	if err != nil {
-		require.NoError(t, err)
-	} // настройте подключение к БД
+	require.NoError(t, err)
 	defer db.Close()
 
 	store := NewParcelStore(db)
@@ -119,7 +99,7 @@ func TestSetStatus(t *testing.T) {
 
 	id, err := store.Add(parcel)
 	require.NoError(t, err)
-	require.NotEmpty(t, id) // настройте подключение к БД
+	require.NotEmpty(t, id)
 
 	err = store.SetStatus(id, ParcelStatusSent)
 	require.NoError(t, err)
@@ -141,9 +121,7 @@ func TestSetStatus(t *testing.T) {
 func TestGetByClient(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "tracker.db")
-	if err != nil {
-		require.NoError(t, err)
-	} // настройте подключение к БД
+	require.NoError(t, err)
 	defer db.Close()
 
 	store := NewParcelStore(db)
@@ -185,7 +163,7 @@ func TestGetByClient(t *testing.T) {
 	for _, parcel := range storedParcels {
 		storedParcel, ok := parcelMap[parcel.Number]
 		require.True(t, ok)
-		assert.Equal(t, parcelMap[parcel.Number], parcel) // в parcelMap лежат добавленные посылки, ключ - идентификатор посылки, значение - сама посылка
+		assert.Equal(t, storedParcel, parcel) // в parcelMap лежат добавленные посылки, ключ - идентификатор посылки, значение - сама посылка
 		// убедитесь, что все посылки из storedParcels есть в parcelMap
 		assert.Equal(t, storedParcel.Client, parcel.Client)
 		assert.Equal(t, storedParcel.Address, parcel.Address)
