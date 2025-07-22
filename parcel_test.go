@@ -40,8 +40,11 @@ func TestAddGetDelete(t *testing.T) {
 
 	parcels, err := store.Get(id)
 	require.NoError(t, err)
-	parcel.Number = parcels.Number
-	assert.Equal(t, parcel, parcels)
+
+	numberId := parcel
+	numberId.Number = id
+
+	assert.Equal(t, numberId, parcels)
 
 	err = store.Delete(id)
 	require.NoError(t, err)
